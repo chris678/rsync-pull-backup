@@ -4,12 +4,19 @@
 
 ## Intention 
 
-The scripts have been designed for server based time machine like backup of user data/documents. They are NOT designed for a full system backup. 
+The scripts have been designed for server based time machine like backup of user data/documents. They are NOT designed for a full system backup. Fot this better tools exist.
+
+The scripts should work with all clients which support a ssh server.
+
+
 
 ## Features
 * Copy secured by ssh connection
 * Each source system has its own configuration
 * batch or single mode
+
+## Content/Scripts
+
 
 ## Usage
 ### Installation
