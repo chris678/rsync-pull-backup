@@ -7,9 +7,9 @@
 
 
 ## Features
-Copy secured by ssh connection
-Each source system has its own configuration
-batch or single mode
+* Copy secured by ssh connection
+* Each source system has its own configuration
+* batch or single mode
 
 ## Usage
 
