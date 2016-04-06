@@ -52,7 +52,7 @@ fn_terminate_script() {
 	exit 1
 }
 
-trap 'fn_terminate_script'
+trap 'fn_terminate_script' SIGINT
 
 # -----------------------------------------------------------------------------
 # Check log files
