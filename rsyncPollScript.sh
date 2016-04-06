@@ -444,7 +444,7 @@ fn_execute_rsync() {
 
 # -----------------------------------------------------------------------------
 # main program
-# -----------------------------------------------------------------------high system load/------
+# -----------------------------------------------------------------------------
 
 # set SESSION for check to upper case so we are not case sensitive (sad experience with typos)
 _SESSION=$(echo $SESSION | tr 'a-z' 'A-Z')
