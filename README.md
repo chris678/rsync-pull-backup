@@ -59,6 +59,9 @@ All other needed folders will be created by the scripts on demand/first usage.
 
 Make sure you can reach the client with ssh and shared key authentication.
 
+And again: **Be aware that a ssh server is a potential risk.** To make it more secure I disabled password login on the clients sshd configuration and changed the owner of the authorized_keys file of the user to root so nobody can access the PC without an interaction of somebody with root access. At least for me this is save enough. 
+
+
 ## Configuration
 
 Check the EXAMPLE.conf file for all and min-EXAMPLE.conf for a min. set of options.
