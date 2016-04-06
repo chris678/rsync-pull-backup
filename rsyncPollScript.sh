@@ -41,7 +41,6 @@ BACKUP_ROOT_PATH=$BASE_PATH/backups
 
 logger() {
 	echo "$(date '+%D %T') $APPNAME[$PID]: $1" >> $LOG
-
 }
 
 # -----------------------------------------------------------------------------
