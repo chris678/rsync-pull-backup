@@ -34,13 +34,14 @@ All scripts are started by crontab on the NAS so nothing needs to be configured 
 * Script does not neeed to run as root on the server
 * If the client is not available the script postpones the backup until the client is back again. No folders in the backup time line will be created.
 * Detailed logging of all actions and changed files
+* Each backup job may have an own key pair
 
 ## Requirements
 * nc needs to be installed on the server
 
 ## Folder structure on the server
 ./backup root
-* /.ssh - Folder for private kay file(s)
+* /.ssh - Folder for private key file(s)
 * /backups - Source folder for the backups (will be created automatically if not exists)
 * /conf -  Folder for configuration and exclude files
 * /dirty - Source folder for "dirty" backups. Dirty backups are backups where in one file type changed after backup (will be created automatically if not exists)
