@@ -48,7 +48,7 @@ logger() {
 # -----------------------------------------------------------------------------
 
 if [ -f "$CONF_PATH/backup.stop" ]; then
-	logger "WARNING: Lock file $CONF_PATH/backup.stop has been found. Terminating without actions" 
+	logger "ERROR: Lock file $CONF_PATH/backup.stop has been found. Terminating without actions" 
 	exit 1
 fi
 
