@@ -20,7 +20,7 @@ The collection contains three scripts:
  
 All scripts are started by crontab on the NAS so I don't need to configure anything on the clients except of the ssh server.
 
-**Be aware that a ssh server is a potential risk.** To make it more secure I disabled password login on the client and changed the owner of the authorized_keys file to root so nobody can access the PC without an interaction of somebody with root access. At least for me this is save enough. 
+**Be aware that a ssh server is a potential risk.** To make it more secure I disabled password login on the clients sshd configuration and changed the owner of the authorized_keys file of the user to root so nobody can access the PC without an interaction of somebody with root access. At least for me this is save enough. 
 
 ## Features
 * Copy secured by ssh connection
