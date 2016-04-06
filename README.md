@@ -18,7 +18,7 @@ The collection contains three scripts:
 * rsyncPollScript.sh: Processes all requests from the queue
 * checkLogfile.sh: Checks the log files of the backups for errors. Because the OMV crontab can be easily configured to send a mail notification on cron job outputs there is no mail component in the script.
  
-All scripts are started by crontab on the NAS so I don't need to configure anything on the clients except of the ssh server.
+All scripts are started by crontab on the NAS so nothing needs to configure anything on the clients except of the ssh server (and also cannot be changed by a malware).
 
 **Be aware that a ssh server is a potential risk.** To make it more secure I disabled password login on the clients sshd configuration and changed the owner of the authorized_keys file of the user to root so nobody can access the PC without an interaction of somebody with root access. At least for me this is save enough. 
 
