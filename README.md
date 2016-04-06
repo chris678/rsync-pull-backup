@@ -1,6 +1,4 @@
-# Readme under construction!
-
-## rsync-pull-backup
+# rsync-pull-backup
 
 ## Intention 
 
