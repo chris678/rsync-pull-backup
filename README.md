@@ -40,9 +40,15 @@ All scripts are started by crontab on the NAS so nothing needs to be configured 
 ## Requirements
 * nc needs to be installed on the server
 
-
-
-## Content/Scripts
+## Folder structure on the server
+./backup root
+* /.ssh - Folder for private kay file(s)
+* /backups - Source folder for the backups (will be created automatically if not exists)
+* /conf -  Folder for configuration and exclude files
+* /dirty - Source folder for "dirty" backups. Dirty backups are backups where in one file type changed after backup (will be created automatically if not exists)
+* /log - Folder for log files (will be created automatically if not exists)
+* /pipeline - Queue folder (will be created automatically if not exists)
+* /wrk - Work folder. Used by backups during process (will be created automatically if not exists)
 
 
 ## Usage
