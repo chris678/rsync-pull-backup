@@ -220,6 +220,11 @@ fn_check_changed_files() {
 			# only changed files, new files are always ok
 			oldFileType=$(file -bi "$youngestBackup/$file_name" | cut -d ";" -f 1)
 
+			if [[ "$oldFileType" = "inode/x-empty" && "$newFileType" = "inode/x-empty" ]]; then
+				# if one of the files is empty, skip 
+				continue
+			fi 
+
 			# only if the old file really exits (might happen in case of manual moves of older backups...)
 			if [ -f "$BACKUP_WRK_PATH/$file_name" ]; then
 				newFileType=$(file -bi "$BACKUP_WRK_PATH/$file_name" | cut -d ";" -f 1)
