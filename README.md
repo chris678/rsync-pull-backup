@@ -34,7 +34,7 @@ All scripts are started by crontab on the NAS so nothing needs to be configured 
 * Script does not neeed to run as root on the server
 * If the client is not available the script postpones the backup until the client is back again. No folders in the backup time line will be created.
 * Detailed logging of all actions and changed files
-* Each backup job may have an own key pair
+* Each backup job may have an own ssh key pair
 
 ## Requirements
 * nc needs to be installed on the server
