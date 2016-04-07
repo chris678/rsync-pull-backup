@@ -75,12 +75,12 @@ if [ "$_FILE" != "" ]; then
 	if [ -f "$_FILE" ]; then
 		while read line; do
 			if [[ "${line:0:1}" != "#" || "${line:0:1}" != "" ]]; then
-				# no comment and no empty line
+				# no comment and not an empty line
 				SESSION=$_SESSION
 
 				fn_add_request_to_queue
 			fi
-		done < $BASE_PATH/conf/$_FILE.request
+		done < $BASE_PATH/conf/$_FILE
 	else
 		logger "ERROR: File $BASE_PATH/conf/$_FILE.request does not exist --> exit"
 	fi
