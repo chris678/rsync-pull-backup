@@ -17,8 +17,8 @@ BASE_PATH=$2
 if [[ "$SESSION" = "" || "$BASE_PATH" = "" ]]; then
 	# Missing parameter --> exit
 	echo ""
-	echo "Missing parameter. Usage: $APPNAME.sh <conf file name without extension> <base path>"
-	echo "Example: $APPNAME.sh <EXAMPLE> <path for backups>"
+	echo "Missing parameter. Usage: $APPNAME.sh <conf file name> <base path>"
+	echo "Example: $APPNAME.sh EXAMPLE /<path>/backup-user"
 	echo ""
 	exit 255
 fi
@@ -124,8 +124,8 @@ fn_get_parameters() {
 	fi
 
 	# check existance of conf file
-	if [ ! -f "$CONF_PATH/$SESSION.conf" ]; then
-		logger "ERROR: $CONF_PATH/$SESSION.conf does not exist. Skip"
+	if [ ! -f "$CONF_PATH/$SESSION" ]; then
+		logger "ERROR: $CONF_PATH/$SESSION does not exist. Skip"
 		return
 	fi
 
@@ -167,7 +167,7 @@ fn_get_parameters() {
 		PRIVATE_KEY_FILE)	PRIVATE_KEY=$_VALUE
 					;;
 		esac
-	done < $CONF_PATH/$SESSION.conf
+	done < $CONF_PATH/$SESSION
 
 	# now we know everything we need to complete the BACKUP_BASE_PATH
 	BACKUP_BASE_PATH=$BACKUP_ROOT_PATH/$DEST_BASE_PATH/$SOURCE_FOLDER
