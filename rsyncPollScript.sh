@@ -173,7 +173,7 @@ fn_get_parameters() {
 	# now we know everything we need to complete the BACKUP_BASE_PATH
 	BACKUP_BASE_PATH=$BACKUP_ROOT_PATH/$DEST_BASE_PATH/$SOURCE_FOLDER
 	BACKUP_WRK_PATH=$WRK_PATH/$DEST_BASE_PATH/$SOURCE_FOLDER/$RSYNC_DATE
-	DIRTY_PATH=$DIRTY_PATH/$DEST_BASE_PATH/$SOURCE_FOLDER
+	BACKUP_DIRTY_PATH=$DIRTY_PATH/$DEST_BASE_PATH/$SOURCE_FOLDER
 
 	# check the existance of the base folders
 	if [ ! -d "$BACKUP_BASE_PATH" ]; then
@@ -181,9 +181,9 @@ fn_get_parameters() {
 		chmod 755 "$BACKUP_BASE_PATH"
 	fi
 
-	if [ ! -d "$DIRTY_PATH" ]; then
-		mkdir -p "$DIRTY_PATH"
-		chmod 755 "$DIRTY_PATH"
+	if [ ! -d "$BACKUP_DIRTY_PATH" ]; then
+		mkdir -p "$BACKUP_DIRTY_PATH"
+		chmod 755 "$BACKUP_DIRTY_PATH"
 	fi
 }
 
@@ -232,9 +232,9 @@ fn_check_changed_files() {
 				if [ "$oldFileType" != "$newFileType" ]; then
 					# something might be wrong! Leave the checks and mark backup as dirty
 
-					logger "ERROR: File $BACKUP_WRK_PATH/$file_name is dirty. $oldFileType <> $newFileType. Backup moved to $DIRTY_PATH/$RSYNC_DATE"
+					logger "ERROR: File $BACKUP_WRK_PATH/$file_name is dirty. $oldFileType <> $newFileType. Backup moved to $BACKUP_DIRTY_PATH/$RSYNC_DATE"
 
-					mv -f "$BACKUP_WRK_PATH" "$DIRTY_PATH" 
+					mv -f "$BACKUP_WRK_PATH" "$BACKUP_DIRTY_PATH" 
 					RET=1
 					break
 				fi
