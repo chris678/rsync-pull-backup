@@ -41,6 +41,7 @@ BACKUP_ROOT_PATH=$BASE_PATH/backups
 
 logger() {
 	echo "$(date '+%D %T') $APPNAME[$PID]: $1" >> $LOG
+
 }
 
 # -----------------------------------------------------------------------------
@@ -219,14 +220,14 @@ fn_check_changed_files() {
 			# only changed files, new files are always ok
 			oldFileType=$(file -bi "$youngestBackup/$file_name" | cut -d ";" -f 1)
 
-			if [[ "$oldFileType" = "inode/x-empty" && "$newFileType" = "inode/x-empty" ]]; then
-				# if one of the files is empty, skip 
-				continue
-			fi 
-
 			# only if the old file really exits (might happen in case of manual moves of older backups...)
 			if [ -f "$BACKUP_WRK_PATH/$file_name" ]; then
 				newFileType=$(file -bi "$BACKUP_WRK_PATH/$file_name" | cut -d ";" -f 1)
+
+				if [[ "$oldFileType" = "inode/x-empty" || "$newFileType" = "inode/x-empty" ]]; then
+					# if one of the files is empty, skip 
+					continue
+				fi 
 
 				if [ "$oldFileType" != "$newFileType" ]; then
 					# something might be wrong! Leave the checks and mark backup as dirty
@@ -265,7 +266,13 @@ fn_expireBackup() {
 			# determine if $line is a directory (files and sym links are out of scope)
 			if [ "$(file -bi $line | cut -d ';' -f 1)" = "inode/directory" ]; then
 				# we have a directory (now we know for sure). Check the age.
-				folderDate=$(date --date $(ls --full-time -d "$line" | cut -d ' ' -f 6 | tr -d '-') '+%s')
+#				folderDate=$(date --date $(ls --full-time -d "$line" | cut -d ' ' -f 6 | tr -d '-') '+%s')
+				folderDate=$(date --date $(basename $(ls -d "$line") | cut -d '_' -f 1 | tr -d '-') '+%s')
+				RET=$?
+
+				if [ "$RET" != "0" ]; then
+					continue
+				fi
 				
 				if [ $folderDate -lt $CompareDate ]; then
 					# directory/backup is older then today - xx days --> maybe delete (we have 2 conditions!)
