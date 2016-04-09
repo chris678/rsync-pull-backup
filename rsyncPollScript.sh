@@ -343,7 +343,7 @@ fn_set_CMD_options() {
 	CMD="$CMD --links"
 	CMD="$CMD --hard-links"
 	CMD="$CMD --one-file-system"
-	CMD="$CMD -rlt"
+	CMD="$CMD -rlts"
 	CMD="$CMD --verbose"
 	CMD="$CMD --delete"
 
@@ -419,7 +419,7 @@ fn_execute_rsync() {
 	# start the backup
 	logger "INFO: Starting backup. Session: $SESSION"
 	logger "INFO: rsync option list: $CMD. SSH options: $SSH_CMD"
-	nice rsync $CMD -e "ssh $SSH_CMD -p $REMOTE_SSH_PORT -l $SOURCE_SSH_USER" $SOURCE_RSYNC_USER@$SOURCE_SSH_SERVER:$SOURCE_FOLDER $BACKUP_WRK_PATH >> $LOG
+	nice rsync $CMD -e "ssh $SSH_CMD -p $REMOTE_SSH_PORT -l $SOURCE_SSH_USER" $SOURCE_RSYNC_USER@$SOURCE_SSH_SERVER:"$SOURCE_FOLDER" "$BACKUP_WRK_PATH" >> $LOG
 	RET=$?
 
 	if [ "$RET" = "0" ];then
