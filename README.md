@@ -4,7 +4,7 @@
 
 The scripts have been designed for server based time machine like backup of user data/documents. They are NOT designed for a full system backup. For this purpose other tools exist.
 
-The scripts should work with all clients which support a ssh server.
+The scripts should work with all clients which support a ssh server. It has been tested with Windows and Linux as client (no Mac available).
 
 Backups are important - but creating them takes time. I've been looking for a way how I can automate my backups and don't need to think about them anymore after setup. Nice would also be to have a time line of backups so I can restore a single, accidently changed/deleted/... file without the need to restore from an archive system. 
 
