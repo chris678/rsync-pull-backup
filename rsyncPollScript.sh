@@ -262,7 +262,7 @@ fn_expireBackup() {
 		# calculate the dead line (one day has 86400 seconds)
 		(( CompareDate=$dateToday-$BACKUP_MIN_AGE*86400 ))
 
-		for line in $(ls -tr --group-directories-first -d "$BACKUP_BASE_PATH"/*); do
+		for line in $(ls --group-directories-first -d "$BACKUP_BASE_PATH"/*); do
 			# determine if $line is a directory (files and sym links are out of scope)
 			if [ "$(file -bi $line | cut -d ';' -f 1)" = "inode/directory" ]; then
 				# we have a directory (now we know for sure). Check the age.
