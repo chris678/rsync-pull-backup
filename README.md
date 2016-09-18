@@ -1,5 +1,7 @@
 # rsync-pull-backup
 
+No more up to date
+
 ## Intention 
 
 The scripts have been designed for server based time machine like backup of user data/documents. They are NOT designed for a full system backup. For this purpose other tools exist.
