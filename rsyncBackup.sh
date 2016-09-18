@@ -164,15 +164,16 @@ fn_check_source_available() {
 		RET=$?
 	else
 		# test if the DNS name really exist
-		ping -c1 $SOURCE_SSH_SERVER 2> 1&> /dev/null
-		RET=$?
+# throws an error for any reason if started by OMV crontab so I disabled for now. If started manually it works
+#		ping -c1 $SOURCE_SSH_SERVER 2> 1&> /dev/null
+#		RET=$?
 
-		if [ "$RET" = "0" ]; then
+#		if [ "$RET" = "0" ]; then
 			nc -vz $SOURCE_SSH_SERVER $REMOTE_SSH_PORT > /dev/null
 			RET=$?
-		else
-			logger "ERROR: DNS name $SOURCE_SSH_SERVER does not exist"
-		fi
+#		else
+#			logger "ERROR: DNS name $SOURCE_SSH_SERVER does not exist"
+#		fi
 	fi
 
 	if [ "$RET" = "0" ]; then
