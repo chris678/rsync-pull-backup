@@ -1,6 +1,33 @@
 #!/bin/bash
+
+#######################################################################
+# Title      :    rsyncBackup.sh
+# Author     :    chris678
+# Date       :    2016-08-14
+# Requires   :    nc, rsync, ssh
+# Category   :    Backup tools
+#######################################################################
+# Description
+#   Reads the backup queue and executes rsync for all requests in the queue
+#   If configured the script adds a request to the AWS queue 
+# 
+#######################################################################
 #
-# script fo archiving/backups using rsync
+# License
+#
+# The MIT License (MIT)
+#
+# Copyright (c) 2016 chris678
+#
+# Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"), 
+# to deal in the Software without restriction, including  without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, 
+# and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject  to the following conditions:
+#
+# The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
+#
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, 
+# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.  IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, 
+# WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #
 
 APPNAME=$(basename $0 | sed "s/\.sh$//")
@@ -8,19 +35,60 @@ PID=$$
 RSYNC_DATE=$(date "+%Y-%m-%d_%H-%M-%S")
 
 # -----------------------------------------------------------------------------
+# function usage
+# -----------------------------------------------------------------------------
+
+fn_usage() {
+	# Missing parameter --> exit
+	echo ""
+	echo "Missing parameter. Usage: $APPNAME.sh -s <conf file name>|-q [-p <base path>]"
+	echo ""
+	echo "Parameters:"
+	echo "-s <conf file name>  - Process a dedicated session from <base path>/conf"
+	echo "-q                   - Process all sessions in <base path>/backup-queue"
+	echo "-p <base path>       - base path for backups."
+	echo "                       Optional, if <base path> is not omitted and $HOME/.rsbackup.conf exists <base path> will be read from there"
+	echo "                       The file $HOME/.rsbackup.conf must contain the line BASE_PATH=<base path>"
+	echo ""
+	exit 255
+}
+
+# -----------------------------------------------------------------------------
 # Check input variables
 # -----------------------------------------------------------------------------
 
-SESSION=$1
-BASE_PATH=$2
+while getopts "s:p:q" opt ; do
+	case $opt in
+		s)	SESSION=$OPTARG
+		;;
+		p) 	BASE_PATH=$OPTARG
+		;;
+		q) 	SESSION=QUEUE
+		;;
+	esac
+done
 
-if [[ "$SESSION" = "" || "$BASE_PATH" = "" ]]; then
+if [ "$SESSION" = "" ]; then
 	# Missing parameter --> exit
-	echo ""
-	echo "Missing parameter. Usage: $APPNAME.sh <conf file name> <base path>"
-	echo "Example: $APPNAME.sh EXAMPLE /<path>/backup-user"
-	echo ""
-	exit 255
+	fn_usage
+fi
+
+if [ "$BASE_PATH" = "" ]; then
+	if [ -f "$HOME/.rsbackup.conf" ]; then
+		# read from configuration file if exists
+		source $HOME/.rsbackup.conf
+
+		if [ ! -d "$BASE_PATH" ]; then
+			# base path does not exist
+			echo ""
+			echo "Base path $BASE_PATH does not exist. Exit"
+			echo ""
+			exit 2
+		fi
+	else
+		# Missing parameter --> exit
+		fn_usage
+	fi
 fi
 
 # -----------------------------------------------------------------------------
@@ -32,8 +100,13 @@ LOG_PATH=$BASE_PATH/log
 CONF_PATH=$BASE_PATH/conf
 DIRTY_PATH=$BASE_PATH/dirty
 SSH_PATH=$BASE_PATH/.ssh
-PIPELINE_PATH=$BASE_PATH/pipeline
+QUEUE_PATH=$BASE_PATH/backup-queue
 BACKUP_ROOT_PATH=$BASE_PATH/backups
+CLOUD_ROOT_PATH=$BASE_PATH/cloud-queue
+
+if [ ! -d "$LOG_PATH" ]; then
+	mkdir -p "$LOG_PATH"
+fi
 
 # -----------------------------------------------------------------------------
 # Mostly needed
@@ -44,22 +117,26 @@ logger() {
 
 }
 
+app_logger() {
+	echo "$(date '+%D %T') $APPNAME[$PID]: $1" >> "$LOG_PATH/$APPNAME.log"
+}
+
 # -----------------------------------------------------------------------------
 # exit in case the no-run file has been set
 # -----------------------------------------------------------------------------
 
 if [ -f "$CONF_PATH/backup.stop" ]; then
-	logger "ERROR: Lock file $CONF_PATH/backup.stop has been found. Terminating without actions" 
+	app_logger "ERROR: Lock file $CONF_PATH/backup.stop has been found. Terminating without actions" 
 	exit 1
 fi
 
 # -----------------------------------------------------------------------------
-# create pipeline is not existing
+# create QUEUE is not existing
 # -----------------------------------------------------------------------------
 
-if [ ! -d "$PIPELINE_PATH" ]; then
-	# create PIPELINE if not existing yet
-	mkdir -p $PIPELINE_PATH
+if [ ! -d "$QUEUE_PATH" ]; then
+	# create QUEUE if not existing yet
+	mkdir -p $QUEUE_PATH
 
 	# we can exit because there cannot be anything waiting
 	exit 0
@@ -70,7 +147,7 @@ fi
 # -----------------------------------------------------------------------------
 
 fn_terminate_script() {
-	logger "ERROR: SIGINT caught. Terminating. Check $BACKUP_WRK_PATH for incomplete backups"
+	app_logger "ERROR: SIGINT caught. Terminating. Check $BACKUP_WRK_PATH for incomplete backups"
 	exit 1
 }
 
@@ -81,9 +158,23 @@ trap 'fn_terminate_script' SIGINT
 # -----------------------------------------------------------------------------
 
 fn_check_source_available() {
-	# ToDo: take care, no IP addresses allowed! Should be changed?
-	nc -vz $SOURCE_SSH_SERVER $REMOTE_SSH_PORT > /dev/null
-	RET=$?
+	# test if $SOURCE_SSH_SERVER is an IP address or a DNS name
+	if [[ $SOURCE_SSH_SERVER =~ ^[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}$ ]]; then
+		nc -nvz $SOURCE_SSH_SERVER $REMOTE_SSH_PORT > /dev/null
+		RET=$?
+	else
+		# test if the DNS name really exist
+# throws an error for any reason if started by OMV crontab so I disabled for now. If started manually it works
+#		ping -c1 $SOURCE_SSH_SERVER 2> 1&> /dev/null
+#		RET=$?
+
+#		if [ "$RET" = "0" ]; then
+			nc -vz $SOURCE_SSH_SERVER $REMOTE_SSH_PORT > /dev/null
+			RET=$?
+#		else
+#			logger "ERROR: DNS name $SOURCE_SSH_SERVER does not exist"
+#		fi
+	fi
 
 	if [ "$RET" = "0" ]; then
 		# ok, we can continue
@@ -116,13 +207,12 @@ fn_get_parameters() {
 	NUMERIC_IDS=1
 	PERMISSIONS="Dgo-w,Dgo+r,Dgo+x,Fgo-w,Fgo+r,Fugo-x"
 	PRIVATE_KEY=id_rsa
+	CLOUD_ARCHIVE_QUEUE=
+	CLOUD_ARCHIVE_REQUEST_FILE=
 	DEST_BASE_PATH=$SESSION
 
 	# set the log file name
 	LOG="$LOG_PATH"/"$APPNAME"-"$SESSION"_$RSYNC_DATE.log
-	if [ ! -d "$LOG_PATH" ]; then
-		mkdir -p "$LOG_PATH"
-	fi
 
 	# check existance of conf file
 	if [ ! -f "$CONF_PATH/$SESSION" ]; then
@@ -137,36 +227,40 @@ fn_get_parameters() {
 		PARAMETER=$(echo $_PARAMETER | tr 'a-z' 'A-Z')
 
 		case $PARAMETER in
-		REMOTE_SSH_PORT) 	REMOTE_SSH_PORT=$_VALUE
-					;;
-		SOURCE_RSYNC_USER)	SOURCE_RSYNC_USER=$_VALUE
-					;;
-		SOURCE_SSH_USER)	SOURCE_SSH_USER=$_VALUE
-					;;
-		SOURCE_SSH_SERVER)	SOURCE_SSH_SERVER=$_VALUE
-					;;
-		SOURCE_FOLDER)		SOURCE_FOLDER=$_VALUE
-					;;
-		SOURCE_EXCLUDE_FILE)	SOURCE_EXCLUDE_FILE=$_VALUE
-					;;
-		BACKUP_BASE_PATH)	DEST_BASE_PATH=$_VALUE
-					;;
-		BACKUP_MIN_COUNT)	BACKUP_MIN_COUNT=$_VALUE
-					;;
-		BACKUP_MIN_AGE)		BACKUP_MIN_AGE=$_VALUE
-					;;
-		STRICT_SSH)		STRICT_SSH=$_VALUE
-					;;
-		BACKUP_OWNER)		BACKUP_OWNER=$_VALUE
-					;;
-		CHMOD)			CHMOD=$_VALUE
-					;;
-		NUMERIC_IDS)		NUMERIC_IDS=$_VALUE
-					;;
-		PERMISSIONS)		PERMISSIONS=$_VALUE
-					;;
-		PRIVATE_KEY_FILE)	PRIVATE_KEY=$_VALUE
-					;;
+		REMOTE_SSH_PORT) 		REMOTE_SSH_PORT=$_VALUE
+						;;
+		SOURCE_RSYNC_USER)		SOURCE_RSYNC_USER=$_VALUE
+						;;
+		SOURCE_SSH_USER)		SOURCE_SSH_USER=$_VALUE
+						;;
+		SOURCE_SSH_SERVER)		SOURCE_SSH_SERVER=$_VALUE
+						;;
+		SOURCE_FOLDER)			SOURCE_FOLDER=$_VALUE
+						;;
+		SOURCE_EXCLUDE_FILE)		SOURCE_EXCLUDE_FILE=$_VALUE
+						;;
+		BACKUP_BASE_PATH)		DEST_BASE_PATH=$_VALUE
+						;;
+		BACKUP_MIN_COUNT)		BACKUP_MIN_COUNT=$_VALUE
+						;;
+		BACKUP_MIN_AGE)			BACKUP_MIN_AGE=$_VALUE
+						;;
+		STRICT_SSH)			STRICT_SSH=$_VALUE
+						;;
+		BACKUP_OWNER)			BACKUP_OWNER=$_VALUE
+						;;
+		CHMOD)				CHMOD=$_VALUE
+						;;
+		NUMERIC_IDS)			NUMERIC_IDS=$_VALUE
+						;;
+		PERMISSIONS)			PERMISSIONS=$_VALUE
+						;;
+		PRIVATE_KEY_FILE)		PRIVATE_KEY=$_VALUE
+						;;
+		CLOUD_ARCHIVE_QUEUE)          	CLOUD_ARCHIVE_QUEUE=$_VALUE
+						;;
+		CLOUD_ARCHIVE_REQUEST_FILE)	CLOUD_ARCHIVE_REQUEST_FILE=$_VALUE
+						;;
 		esac
 	done < $CONF_PATH/$SESSION
 
@@ -266,7 +360,6 @@ fn_expireBackup() {
 			# determine if $line is a directory (files and sym links are out of scope)
 			if [ "$(file -bi $line | cut -d ';' -f 1)" = "inode/directory" ]; then
 				# we have a directory (now we know for sure). Check the age.
-#				folderDate=$(date --date $(ls --full-time -d "$line" | cut -d ' ' -f 6 | tr -d '-') '+%s')
 				folderDate=$(date --date $(basename $(ls -d "$line") | cut -d '_' -f 1 | tr -d '-') '+%s')
 				RET=$?
 
@@ -390,6 +483,31 @@ fn_set_CMD_options() {
 }
 
 # -----------------------------------------------------------------------------
+# add cloud backup request
+# -----------------------------------------------------------------------------
+
+fn_add_to_cloud_queue() {
+	CLOUD_ARCHIVE_QUEUE="$CLOUD_ROOT_PATH/$CLOUD_ARCHIVE_QUEUE"
+
+	# check if we have a path (=take action)
+	if [ ! "$CLOUD_ARCHIVE_QUEUE" = "" ]; then
+		# if the path does not exist, create it
+		if [ ! -d "$CLOUD_ARCHIVE_QUEUE" ]; then
+			mkdir -p "$CLOUD_ARCHIVE_QUEUE"
+			chmod 755 "$CLOUD_ARCHIVE_QUEUE"
+		fi
+		
+		# the CLOUD_ARCHIVE_REQUEST_FILE needs to the name of an existing configuration file
+		# so we need to check if it is true
+		if [ ! -f "$CONF_PATH/$CLOUD_ARCHIVE_REQUEST_FILE" ]; then
+			logger "ERROR: Cloud backup configuration: $CONF_PATH/$CLOUD_ARCHIVE_REQUEST_FILE does not exist. No cloud backup requested"
+		else
+			echo -n "BACKUP_PATH=$BACKUP_BASE_PATH/$RSYNC_DATE" > "$CLOUD_ARCHIVE_QUEUE/$CLOUD_ARCHIVE_REQUEST_FILE"
+		fi
+	fi
+}
+
+# -----------------------------------------------------------------------------
 # start rsync for a single task
 # -----------------------------------------------------------------------------
 
@@ -435,8 +553,11 @@ fn_execute_rsync() {
 			# integrate new backup
 			fn_integrate_new_backup
 
-			# and if there are some ol. Set to 0 for infinite.der backup we can remove
+			# and if there are some older backups we can remove them
 			fn_expireBackup
+
+			# prepare CLOUD backup
+			fn_add_to_cloud_queue
 	
 			logger "INFO: Backup successful finished"
 		else
@@ -456,12 +577,12 @@ fn_execute_rsync() {
 # set SESSION for check to upper case so we are not case sensitive (sad experience with typos)
 _SESSION=$(echo $SESSION | tr 'a-z' 'A-Z')
 
-# Check if script is already running to avoid high system load/conflicts in case of PIPELINE
+# Check if script is already running to avoid high system load/conflicts in case of QUEUE
 if [ "$(pidof -x $(basename $0))" = "$PID" ]; then
 	# script is not running twice, continue
 
-	if [ "$_SESSION" = "PIPELINE" ]; then
-		for _file in $(ls -tr $PIPELINE_PATH); do
+	if [ "$_SESSION" = "QUEUE" ]; then
+		for _file in $(ls -tr $QUEUE_PATH); do
 			SESSION=$_file
 			# start rsync for the session
 			fn_execute_rsync
@@ -472,15 +593,15 @@ if [ "$(pidof -x $(basename $0))" = "$PID" ]; then
 				continue
 			fi
 
-			# we are done for this session and can remove the request from the pipeline
-			rm -f $PIPELINE_PATH/$_file
+			# we are done for this session and can remove the request from the queue
+			rm -f $QUEUE_PATH/$_file
 		done
 	else
 		fn_execute_rsync
 	fi
 else
-	if [ "$_SESSION" != "PIPELINE" ]; then
-		# think PIPELINE is mostly batch mode and should not give an output. But in dialog we should know
+	if [ "$_SESSION" != "QUEUE" ]; then
+		# think QUEUE is mostly batch mode and should not give an output. But in dialog we should know
 		echo ""
 		echo "Script already running --> exit"
 		echo ""
