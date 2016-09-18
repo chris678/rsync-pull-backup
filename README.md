@@ -10,6 +10,8 @@ Backups are important - but creating them takes time and to be fair I'm lazy wit
 
 Next request has been to make it save so it cannot be changed on/from my local systems. Because I have a NAS (in this case a BananaPi with OMV) the idea came up to start the backups from the NAS using rsync. This script collection is the result.
 
+There is no restore functionalit so the scripts are "one way only". For me this doesn't matter as they are only desinged for files/documents which can be restored manually without huge problems/conflicts with access rights and so on. To have access to the backups from a remote site I use /etc/fstab to mount the base folder of a backup user to another folder which is reachable by a SMB share. This can be done without risk because the owners are different and by default only the backup user has write access to the backup. All other ones can only read the files. Didn't test if this would be true also if you use soft links for this.
+
 ## Features
 * Copy secured by ssh connection
 * Each source system has its own configuration (and might also have multiple)
