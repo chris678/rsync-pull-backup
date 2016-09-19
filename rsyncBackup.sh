@@ -487,10 +487,10 @@ fn_set_CMD_options() {
 # -----------------------------------------------------------------------------
 
 fn_add_to_cloud_queue() {
-	CLOUD_ARCHIVE_QUEUE="$CLOUD_ROOT_PATH/$CLOUD_ARCHIVE_QUEUE"
-
 	# check if we have a path (=take action)
 	if [ ! "$CLOUD_ARCHIVE_QUEUE" = "" ]; then
+		CLOUD_ARCHIVE_QUEUE="$CLOUD_ROOT_PATH/$CLOUD_ARCHIVE_QUEUE"
+
 		# if the path does not exist, create it
 		if [ ! -d "$CLOUD_ARCHIVE_QUEUE" ]; then
 			mkdir -p "$CLOUD_ARCHIVE_QUEUE"
