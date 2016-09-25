@@ -502,7 +502,7 @@ fn_add_to_cloud_queue() {
 		if [ ! -f "$CONF_PATH/$CLOUD_ARCHIVE_REQUEST_FILE" ]; then
 			logger "ERROR: Cloud backup configuration: $CONF_PATH/$CLOUD_ARCHIVE_REQUEST_FILE does not exist. No cloud backup requested"
 		else
-			echo -n "BACKUP_PATH=$BACKUP_BASE_PATH/$RSYNC_DATE" > "$CLOUD_ARCHIVE_QUEUE/$CLOUD_ARCHIVE_REQUEST_FILE"
+			echo "BACKUP_PATH=$BACKUP_BASE_PATH/$RSYNC_DATE" > "$CLOUD_ARCHIVE_QUEUE/$CLOUD_ARCHIVE_REQUEST_FILE"
 		fi
 	fi
 }

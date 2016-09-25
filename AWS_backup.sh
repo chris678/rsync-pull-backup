@@ -75,7 +75,7 @@ if [ "$QUEUE_NAME" = "" ]; then
 	fn_usage
 fi
 
-if [ "$BASE_PATH" = "") ]; then
+if [ "$BASE_PATH" = "" ]; then
 	if [ -f "$HOME/.rsbackup.conf" ]; then
 		# read from configuration file
 		source $HOME/.rsbackup.conf
@@ -258,12 +258,15 @@ fn_expireBackup() {
 fn_set_TAR_CMD_options() {
 	# determine the excludes
 	CMD_TAR_EXCLUDE=""
-	IFS=':' read -r -a EXCLUDE_ARRAY <<< "$TAR_EXCLUDE"
 
-	for element in "${EXCLUDE_ARRAY[@]}"
-	do
-	    CMD_TAR_EXCLUDE="$CMD_TAR_EXCLUDE --exclude=$element"
-	done
+	if [ "$TAR_EXCLUDE" != "" ]; then
+		IFS=':' read -r -a EXCLUDE_ARRAY <<< "$TAR_EXCLUDE"
+
+		for element in "${EXCLUDE_ARRAY[@]}"
+		do
+		    CMD_TAR_EXCLUDE="$CMD_TAR_EXCLUDE --exclude=$element"
+		done
+	fi
 }
 
 # -----------------------------------------------------------------------------
@@ -298,7 +301,7 @@ fn_process_find_and_tar() {
 	if [ "$RET" = "0" ];then
 		# check for encryption
 		if [ ! "$CCRYPT_ENC_KEY" = "" ]; then
-			export CCRYPT_ENC_KEY=$CCRYPT_ENC_KEY
+			export CCRYPT_ENC_KEY="$CCRYPT_ENC_KEY"
 			nice ccrypt -e -E CCRYPT_ENC_KEY $BACKUP_TAR_FILE.gz
 			RET=$?
 			export CCRYPT_ENC_KEY=

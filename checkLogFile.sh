@@ -36,7 +36,7 @@ PID=$$
 # Check input variables
 # -----------------------------------------------------------------------------
 
-while getopts "p:d" opt ; do
+while getopts "p:d:" opt ; do
 	case $opt in
 		p) 	BASE_PATH=$OPTARG
 		;;
