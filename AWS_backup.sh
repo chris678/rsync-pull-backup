@@ -260,11 +260,13 @@ fn_set_TAR_CMD_options() {
 	CMD_TAR_EXCLUDE=""
 
 	if [ "$TAR_EXCLUDE" != "" ]; then
+		CMD_TAR_EXCLUDE="/tmp/$SESSION"
+
 		IFS=':' read -r -a EXCLUDE_ARRAY <<< "$TAR_EXCLUDE"
 
 		for element in "${EXCLUDE_ARRAY[@]}"
 		do
-		    CMD_TAR_EXCLUDE="$CMD_TAR_EXCLUDE --exclude=$element"
+			echo "$element" >> $CMD_TAR_EXCLUDE
 		done
 	fi
 }
@@ -291,9 +293,19 @@ fn_process_find_and_tar() {
 
 	# start compression friendly
 	if [[ "$FILE_AGE" = "0" && "$FILE_AGE" = "" ]]; then
-		find * -type f -print0 | tar cf $BACKUP_TAR_FILE --null --files-from - $CMD_TAR_EXCLUDE && gzip $BACKUP_TAR_FILE
+		if [ "$CMD_TAR_EXCLUDE" = "" ]; then
+			find * -type f -print0 | tar cf $BACKUP_TAR_FILE --null --files-from - && gzip $BACKUP_TAR_FILE
+		else
+			find * -type f -print0 | tar cf $BACKUP_TAR_FILE --null --files-from - -X $CMD_TAR_EXCLUDE && gzip $BACKUP_TAR_FILE
+			rm -f $CMD_TAR_EXCLUDE
+		fi
 	else
-		find * -type f -mtime -"$FILE_AGE" -print0 | tar cf $BACKUP_TAR_FILE --null --files-from - $CMD_TAR_EXCLUDE && gzip $BACKUP_TAR_FILE
+		if [ "$CMD_TAR_EXCLUDE" = "" ]; then
+			find * -type f -mtime -"$FILE_AGE" -print0 | tar cf $BACKUP_TAR_FILE --null --files-from - && gzip $BACKUP_TAR_FILE
+		else
+			find * -type f -mtime -"$FILE_AGE" -print0 | tar cf $BACKUP_TAR_FILE --null --files-from - -X $CMD_TAR_EXCLUDE && gzip $BACKUP_TAR_FILE
+			rm -f $CMD_TAR_EXCLUDE
+		fi
 	fi
 
 	RET=$?
